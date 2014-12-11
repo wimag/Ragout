@@ -19,6 +19,7 @@ import networkx as nx
 
 from utils.lastz_parser import (parse_lastz_maf, run_lastz,
                                 filter_intersecting, filter_by_length)
+from BOP import find_distance
 
 
 def get_alignment(reference, target, overwrite):
@@ -46,7 +47,7 @@ def get_blocks(reference, target, overwrite, min_alignmtnt):
             blocks[row.seq_id].append((r_id, row))
         for seq_id in blocks:
             blocks[seq_id].sort(key=lambda pair: pair[1].start)
-            to_block = lambda (r_id, row): (r_id + 1) * row.strand
+            to_block = lambda x: (x[0] + 1) * x[1].strand
             blocks[seq_id] = list(map(to_block, blocks[seq_id]))
 
         return blocks
@@ -81,6 +82,22 @@ def count_discord_adj(ref_blocks, qry_blocks):
 
     return counter
 
+def count_discord_adj1(ref_blocks, qry_blocks):
+    A = []
+    B = []
+    A.append([0])
+    B.append([0])
+    maxv = -1
+    for seq, bl in ref_blocks.items():
+        A.append(bl)
+        maxv = max(maxv, max(bl, key=abs))
+    for seq, bl in qry_blocks.items():
+        B.append(bl)
+    A.append([maxv+1])
+    B.append([maxv+1])
+    #print(A)
+    #print(B)
+    find_distance(A, B)
 
 def main():
     parser = argparse.ArgumentParser(description="Compare two assemblies")
@@ -99,8 +116,9 @@ def main():
     ref_blocks, qry_blocks = get_blocks(args.assembly_1, args.assembly_2,
                                         args.overwrite, int(args.block_size))
     output_blocks(ref_blocks)
+    print("ololo")
     output_blocks(qry_blocks)
-    print(count_discord_adj(ref_blocks, qry_blocks))
+    count_discord_adj1(ref_blocks, qry_blocks)
 
 
 if __name__ == "__main__":
